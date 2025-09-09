@@ -1,15 +1,5 @@
 local State = {timeFrozen = false}
 
-local function isPlayerAllowed()
-    local identifiers = GetPlayerIdentifiers(PlayerId())
-    for _, identifier in ipairs(identifiers) do
-        if Config.AllowedIdentifiers[identifier] then
-            return true
-        end
-    end
-    return false
-end
-
 local function playClapAnimation()
     local playerPed = PlayerPedId()
     
@@ -24,7 +14,17 @@ local function playClapAnimation()
 end
 
 local function toggleTimeStop()
-    if not isPlayerAllowed() then
+    -- Request permission check from server
+    TriggerServerEvent('TimeClap:requestPermissionCheck')
+end
+
+RegisterCommand('timestop', function()
+    toggleTimeStop()
+end, false)
+
+RegisterNetEvent('TimeClap:permissionResult')
+AddEventHandler('TimeClap:permissionResult', function(hasPermission)
+    if not hasPermission then
         TriggerEvent('chat:addMessage', { args = { '^1[SYSTEM]', 'You do not have permission to use this command.' } })
         return
     end
@@ -46,11 +46,7 @@ local function toggleTimeStop()
         TriggerServerEvent('TimeClap:notifyAndFreezePlayers', State.timeFrozen)
         TriggerEvent('chat:addMessage', { args = { '^2[SYSTEM]', 'Time has been unfrozen for everyone.' } })
     end
-end
-
-RegisterCommand('timestop', function()
-    toggleTimeStop()
-end, false)
+end)
 
 RegisterNetEvent('TimeClap:setFreezeState')
 AddEventHandler('TimeClap:setFreezeState', function(freeze)
